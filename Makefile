@@ -2,21 +2,20 @@
 TARGET:= tcclc
 
 # Which target board
-#BOARD:=trinket
-BOARD:=t85
+# BOARD:=mh-timy
+BOARD:=t88
 
 # Which microcontroller
-MCU:=attiny85
+MCU:=attiny88
 
 # Which avrdude to use
 PROGSW:=avrdude
 
 # Which fuses
 #BOD ≈ 4.3 V: EFUSE = 0xFC (BODLEVEL = 100)
-LFUSE:= lfuse:w:0xE2:m 
+LFUSE:= lfuse:w:0xFF:m 
 HFUSE:= hfuse:w:0xDF:m 
-EFUSE:= efuse:w:0xFC:m
-
+EFUSE:= efuse:w:0xF8:m
 
 # Apps and Flags
 PROGSWFLAGS:= -p $(BOARD)
