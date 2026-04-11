@@ -1,10 +1,12 @@
 
-# TCC Lock Controller (ATtiny85)
+# TCC Lock Controller (ATtiny88)
+
+# 
 
 ## Overview
 
 This firmware implements a torque‑converter clutch (TCC) lock controller
-using an ATtiny85 microcontroller.
+using an ATtiny88 microcontroller.
 
 The controller:
 
@@ -26,48 +28,81 @@ pulse stream.
 
 ### Microcontroller
 
-- Device: **ATtiny85**
-- Clock: **Internal 8 MHz RC oscillator**
-- `F_CPU = 8000000UL`
+- Device: **ATtiny88**
+- Clock: **Internal 16 MHz crystal oscillator**
+- `F_CPU = 16000000UL`
 
 Recommended fuse configuration:
 
 | Fuse | Value | Purpose |
-|-----|------|---------|
-| LFUSE | `0xE2` | CKDIV8 disabled (full 8 MHz clock) |
-| HFUSE | `0xDF` | Standard configuration |
-| EFUSE | `0xFC` | Brown‑out detection ≈ 4.3 V |
+|------|-------|---------|
+| LFUSE | `0xFF` | External full-swing crystal oscillator selected; no clock division (`CKDIV8` unprogrammed), so the MCU runs at the full 16 MHz crystal frequency; long startup delay selected for stable crystal startup |
+| HFUSE | `0xDC` | Brown-out detection enabled at approximately 4.3 V; ISP programming enabled (`SPIEN` programmed); reset pin remains a reset pin (`RSTDISBL` unprogrammed); debugWIRE disabled; EEPROM is erased during chip erase |
+| EFUSE | `0xFF` | No bootloader/self-programming (`SELFPRGEN` unprogrammed); reserved bits left at their default `1` values |
 
 ---
 
 ### Board
 
-Tested on:
+UnTested on:
 
-- **Adafruit Trinket 5V (ATtiny85)**
+- **MH-Tiny Clone**
 
 ---
 
 ## Pin Mapping
 
-| Function | ATtiny85 Pin | Description |
+| Function | ATtiny88 Pin | Description |
 |---------|--------------|-------------|
-| Vehicle Speed Input | PB4 | ABS speed signal (TTL) |
-| Engine Speed Input | PB2 | Engine RPM signal (TTL) |
-| Clutch Output | PB1 | TCC control output + LED |
+| Throttle Input | PA3 | Internal pull-up |
+| Engine Speed Input | PD4 | Engine RPM signal (TTL) |
+| Vehical Speed Input | ??? | ABS signal (TTL) |
+| Clutch Output | PD0 | TCC control output + LED |
+
+| PCB Label | ATtiny88 | Notes |
+|-----------|----------|-------|
+| 0 | PD0 | On-board LED |
+| 1 | PD1 | USB D+ |
+| 2 | PD2 | USB D- |
+| 3 | PD3 | GPIO |
+| 4 | PD4 | GPIO |
+| 5 | PD5 | GPIO |
+| 6 | PD6 | GPIO |
+| 7 | PD7 | GPIO |
+| 8 | PB0 | GPIO |
+| 9 | PB1 | GPIO |
+| 10 | PB2 | GPIO |
+| 11 | PB3 | ISP MOSI |
+| 12 | PB4 | ISP MISO |
+| 13 | PB5 | ISP SCK |
+| 14 | PB7 | GPIO |
+| 15 | PA2 | GPIO |
+| 16 | PA3 | GPIO |
+| A0 | PC0 | Analog/GPIO |
+| A1 | PC1 | Analog/GPIO |
+| A2 | PC2 | Analog/GPIO |
+| A3 | PC3 | Analog/GPIO |
+| A4 | PC4 | Analog/GPIO |
+| A5 | PC5 | Analog/GPIO |
+| A6 | PA0 | Analog/GPIO |
+| A7 | PA1 | Analog/GPIO |
+| 25 | PC7 | GPIO |
+| RST | PC6 | Reset |
+| — | PB6 | 16 MHz oscillator |
+
 
 ---
 
-#### Atmel‑ICE to Trinket Programming Connections
+#### Atmel‑ICE to xxTrinket Programming Connections
 
-| Atmel‑ICE AVR Port Pin | Mini‑Squid Pin | Trinket Pin Assignment |
+| Atmel‑ICE AVR Port Pin | Mini‑Squid Pin | MH-Tiny Pin Assignment |
 |-----------------------|---------------|-----------------------|
-| Pin 1 (TCK) | 1 | CN4‑2 / #2 (SCK) |
-| Pin 2 (GND) | 2 | CN3‑4 / GND |
-| Pin 3 (TDO) | 3 | CN4‑3 / #1 (MISO) |
-| Pin 4 (VTG) | 4 | CN4‑1 / 5V (VTG) |
-| Pin 6 (nSRST) | 6 | CN3‑1 / RESET |
-| Pin 9 (TDI) | 9 | CN4‑4 / #0 (MOSI) |
+| Pin 1 (TCK) | 1 | ISP-3 (SCK) |
+| Pin 2 (GND) | 2 | ISP-6 (GND) |
+| Pin 3 (TDO) | 3 | ISP-1 (MISO) |
+| Pin 4 (VTG) | 4 | ISP-2 (VCC) |
+| Pin 6 (nSRST) | 6 | ISP-5 (RST |
+| Pin 9 (TDI) | 9 | ISP-4 (MOSI) |
 
 ---
 
@@ -78,16 +113,7 @@ implicitly using the following ratios:
 
 | Signal | Ratio |
 |------|------|
-| ABS Frequency | **2.2 Hz per mph** |
 | Engine Frequency | **1/5 Hz per rpm** |
-
-Example conversions:
-
-| Quantity | Frequency |
-|---------|-----------|
-| 27 mph | 59.4 Hz |
-| 15 mph | 33.0 Hz |
-| 950 rpm | 190 Hz |
 
 ---
 
@@ -112,8 +138,6 @@ Using the signal ratios above:
 
 | Condition | Frequency | Pulses in 300 ms | Firmware Constant |
 |----------|-----------|------------------|------------------|
-| 27 mph | 59.4 Hz | ≈17.8 | `ABS_FORCE_ENGAGE_COUNT = 18` |
-| 15 mph | 33 Hz | ≈9.9 | `ABS_ENGAGE_COUNT = 10` |
 | 950 rpm | 190 Hz | 57 | `ENGINE_MIN_COUNT = 57` |
 
 These values correspond directly to the constants defined in the firmware.
@@ -125,19 +149,6 @@ These values correspond directly to the constants defined in the firmware.
 The clutch state is evaluated **once every 300 ms gate** using the following
 rule order:
 
-```
-IF vehicle_speed > 27 mph:
-    clutch_state = ENGAGED
-
-ELSE IF engine_speed < 950 rpm:
-    clutch_state = DISENGAGED
-
-ELSE IF vehicle_speed > 15 mph:
-    clutch_state = ENGAGED
-
-ELSE:
-    clutch_state = clutch_state
-```
 
 This ordering ensures:
 
@@ -218,7 +229,7 @@ reducing timing jitter.
 Example compilation:
 
 ```bash
-avr-gcc -mmcu=attiny85 -std=c99 -DF_CPU=8000000UL -Os -o tcclc.elf tcclc.c
+avr-gcc -mmcu=attiny88 -std=c99 -DF_CPU=16000000UL -Os -o tcclc.elf tcclc.c
 avr-objcopy -O ihex tcclc.elf tcclc.hex
 ```
 
@@ -229,16 +240,16 @@ avr-objcopy -O ihex tcclc.elf tcclc.hex
 Flash firmware:
 
 ```bash
-avrdude -p t85 -c atmelice_isp -P usb -U flash:w:tcclc.hex:i
+avrdude -p t88 -c atmelice_isp -P usb -U flash:w:tcclc.hex:i
 ```
 
 Program fuses:
 
 ```bash
-avrdude -p t85 -c atmelice_isp -P usb \
--U lfuse:w:0xE2:m \
--U hfuse:w:0xDF:m \
--U efuse:w:0xFC:m
+avrdude -p t88 -c atmelice_isp -P usb \
+-U lfuse:w:0xFF:m \
+-U hfuse:w:0xDC:m \
+-U efuse:w:0xFF:m
 ```
 
 ---
@@ -265,6 +276,7 @@ avrdude -p t85 -c atmelice_isp -P usb \
 ## Summary
 
 This project implements a compact and reliable torque converter clutch
-controller using vehicle speed and engine RPM signals. The firmware
+controller using engine RPM signal. The firmware
 prioritizes deterministic behavior, simplicity, and minimal resource
 usage while remaining well suited for embedded automotive applications.
+
