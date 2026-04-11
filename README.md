@@ -10,17 +10,12 @@ using an ATtiny88 microcontroller.
 
 The controller:
 
-- Measures **vehicle speed** from an ABS square‑wave signal.
-- Measures **engine speed** from a digital RPM signal.
-- Computes signal frequency using a **300 ms gate interval**.
-- Evaluates clutch engagement logic once per gate.
-- Initializes in a safe **clutch disengaged** state at power‑up.
-- Runs almost entirely interrupt‑driven while the CPU remains in sleep mode.
-
-The system has been tested in a **Jeep Grand Cherokee WJ with a 42RE
-automatic transmission**. The ABS signal is used because the transmission
-output speed sensor provides an analog sine signal rather than a digital
-pulse stream.
+- Measures **vehicle speed** using Timer1 input capture (period measurement) from ABS.
+- Measures **engine speed** by counting pulses over a gated interval.
+- Reads a **digital throttle idle switch** with internal pull-up.
+- Evaluates control logic every **300 ms**.
+- Initializes in a safe **clutch disengaged** state at power-up.
+- Runs primarily in interrupt-driven sleep mode.
 
 ---
 
@@ -44,8 +39,6 @@ Recommended fuse configuration:
 
 ### Board
 
-UnTested on:
-
 - **MH-Tiny Clone**
 
 ---
@@ -56,8 +49,9 @@ UnTested on:
 |---------|--------------|-------------|
 | Throttle Input | PA3 | Internal pull-up |
 | Engine Speed Input | PD4 | Engine RPM signal (TTL) |
-| Vehical Speed Input | ??? | ABS signal (TTL) |
+| Vehicle Speed Input | PB0 | ABS signal via ICP1 |
 | Clutch Output | PD0 | TCC control output + LED |
+
 
 | PCB Label | ATtiny88 | Notes |
 |-----------|----------|-------|
@@ -93,7 +87,7 @@ UnTested on:
 
 ---
 
-#### Atmel‑ICE to xxTrinket Programming Connections
+#### Atmel‑ICE to MH-Tiny Programming Connections
 
 | Atmel‑ICE AVR Port Pin | Mini‑Squid Pin | MH-Tiny Pin Assignment |
 |-----------------------|---------------|-----------------------|
@@ -111,116 +105,78 @@ UnTested on:
 The firmware converts frequency measurements to vehicle speed and engine RPM
 implicitly using the following ratios:
 
+
 | Signal | Ratio |
 |------|------|
+| ABS Frequency | **2.2 Hz per mph** |
 | Engine Frequency | **1/5 Hz per rpm** |
 
 ---
 
-## Frequency Measurement
+## Measurement Methods
 
-Rising edges on the input pins are counted during a **300 ms gate interval**.
+### Vehicle Speed
 
-At the end of each gate:
+- Measured using **Timer1 input capture**
+- Uses **period measurement**, not counting
+- Higher resolution and faster response than gated counting
 
-1. Edge counts are latched.
-2. Counters are reset.
-3. Control logic evaluates clutch state.
+### Engine Speed
 
-This approach provides stable integer‑based frequency measurement with very
-low CPU overhead.
-
----
-
-## Threshold Conversion (300 ms Gate)
-
-Using the signal ratios above:
-
-| Condition | Frequency | Pulses in 300 ms | Firmware Constant |
-|----------|-----------|------------------|------------------|
-| 950 rpm | 190 Hz | 57 | `ENGINE_MIN_COUNT = 57` |
-
-These values correspond directly to the constants defined in the firmware.
+- Counted over a **300 ms gate interval**
+- Uses pin-change interrupt on PD4
 
 ---
 
 ## Control Logic
 
-The clutch state is evaluated **once every 300 ms gate** using the following
-rule order:
-
-
-This ordering ensures:
-
-- High‑speed lockup always engages the clutch.
-- Engine stall protection disengages the clutch.
-- Normal engagement occurs above 15 mph.
-- Otherwise the clutch state remains unchanged.
-
----
-
-## Timer Configuration
-
-Timer0 operates in **CTC (Clear‑Timer‑on‑Compare) mode**.
-
-| Parameter | Value |
-|----------|------|
-| Prescaler | 1024 |
-| OCR0A | 124 |
-| Interrupt period | ≈16 ms |
-
-The firmware accumulates these interrupts until **300 ms** has elapsed,
-which defines the measurement gate.
-
----
-
-## Interrupt Architecture
-
-Two interrupts drive the firmware.
-
-### Pin‑Change Interrupt (PCINT)
-
-Triggered by PB4 and PB2.
-
-Responsibilities:
-
-- Detect rising edges on input signals
-- Increment frequency counters
-
-### Timer0 Compare Interrupt
-
-Triggered approximately every 16 ms.
-
-Responsibilities:
-
-- Maintain the 300 ms measurement gate
-- Snapshot frequency counters
-- Execute clutch control logic
-
----
-
-## Power Behavior
-
-- Clutch output initializes **LOW** at power‑up.
-- Clutch remains disengaged until the first valid decision cycle completes.
-
----
-
-## Execution Model
-
-The firmware is entirely interrupt‑driven.
-
-The main loop simply sleeps:
+Evaluated every **300 ms** in this exact order:
 
 ```
-while(1)
-{
-    sleep_mode();
-}
+IF vehicle_speed > 27 mph:
+    clutch = ENGAGED
+
+ELSE IF engine_speed < 550 rpm:
+    clutch = DISENGAGED
+
+ELSE IF throttle == ACTIVE AND engine_speed < 735 rpm:
+    clutch = DISENGAGED
+
+ELSE IF vehicle_speed > 9 mph:
+    IF throttle == ACTIVE:
+        clutch = ENGAGED
+
+ELSE:
+    clutch = HOLD PREVIOUS STATE
 ```
 
-The CPU wakes only for interrupts, minimizing power consumption and
-reducing timing jitter.
+### Behavioral Summary
+
+- **High-speed override (>27 mph)** forces clutch engaged
+- **Engine stall protection (<550 rpm)** forces disengage
+- **Low RPM + throttle condition (<735 rpm)** prevents lugging
+- **Normal engagement (>9 mph + throttle)**
+- Otherwise, state is maintained
+
+---
+## Interrupts
+
+### TIMER1_CAPT_vect
+- Captures vehicle speed period
+
+### PCINT2_vect
+- Counts engine pulses
+
+### TIMER0_COMPA_vect
+- Executes control logic
+
+---
+
+## Notes
+
+- Internal pull-up is enabled on throttle input (PA3)
+- Vehicle speed uses **period measurement**, so loss-of-signal is detected via timeout
+- First capture is discarded to ensure valid period measurement
 
 ---
 
@@ -275,8 +231,11 @@ avrdude -p t88 -c atmelice_isp -P usb \
 
 ## Summary
 
-This project implements a compact and reliable torque converter clutch
-controller using engine RPM signal. The firmware
-prioritizes deterministic behavior, simplicity, and minimal resource
-usage while remaining well suited for embedded automotive applications.
+This firmware implements a deterministic, low-overhead TCC controller using:
 
+- Timer1 period measurement for vehicle speed
+- Gated counting for engine speed
+- Ordered rule-based control logic
+
+The design prioritizes reliability, simplicity, and precise timing.
+                    
