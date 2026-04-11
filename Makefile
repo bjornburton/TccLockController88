@@ -12,10 +12,10 @@ MCU:=attiny88
 PROGSW:=avrdude
 
 # Which fuses
-#BOD ≈ 4.3 V: EFUSE = 0xFC (BODLEVEL = 100)
+#BOD ≈ 4.3 V
 LFUSE:= lfuse:w:0xFF:m 
-HFUSE:= hfuse:w:0xDF:m 
-EFUSE:= efuse:w:0xF8:m
+HFUSE:= hfuse:w:0xDC:m 
+EFUSE:= efuse:w:0xFF:m
 
 # Apps and Flags
 PROGSWFLAGS:= -p $(BOARD)
