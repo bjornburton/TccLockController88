@@ -55,7 +55,7 @@ install:
 	$(PROGSW) $(PROGSWFLAGS) -c usbtiny -U flash:w:$(HEX)
 
 installice:
-	$(PROGSW) $(PROGSWFLAGS) -c atmelice_isp -P usb -U flash:w:$(HEX)
+	$(PROGSW) $(PROGSWFLAGS) -c atmelice_isp -P usb -B100  -U flash:w:$(HEX)
 
 installasp:
 	$(PROGSW) -p $(MCU) -c usbasp -U flash:w:$(HEX)
@@ -64,5 +64,5 @@ size:
 	avr-size --format=avr --mcu=$(MCU) $(ELF)
 
 fuse:
-	$(PROGSW) $(PROGSWFLAGS) -c atmelice_isp -P usb -u -U $(LFUSE)  -U $(HFUSE) -U $(EFUSE)
+	$(PROGSW) $(PROGSWFLAGS) -c atmelice_isp -P usb -B 100 -U $(LFUSE)  -U $(HFUSE) -U $(EFUSE)
 
