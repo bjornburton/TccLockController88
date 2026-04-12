@@ -43,6 +43,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
 #include <stdint.h>
 
 /* ============================================================
@@ -216,6 +217,7 @@ ISR(PCINT2_vect)
 
 ISR(TIMER0_COMPA_vect)
 {
+    wdt_reset(); // pet the dog
     gate_ticks++;
 
     if (gate_ticks < GATE_TICKS)
@@ -359,6 +361,10 @@ int main(void)
     io_init();
     timer1_init();
     timer0_init();
+
+    wdt_disable();
+    wdt_enable(WDTO_2S);
+    wdt_reset();
 
     set_sleep_mode(SLEEP_MODE_IDLE);
     sei();
