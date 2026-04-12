@@ -91,12 +91,12 @@ Recommended fuse configuration:
 
 | Atmel‑ICE AVR Port Pin | Mini‑Squid Pin | MH-Tiny Pin Assignment |
 |-----------------------|---------------|-----------------------|
-| Pin 1 (TCK) | 1 | ISP-3 (SCK) |
-| Pin 2 (GND) | 2 | ISP-6 (GND) |
-| Pin 3 (TDO) | 3 | ISP-1 (MISO) |
-| Pin 4 (VTG) | 4 | ISP-2 (VCC) |
-| Pin 6 (nSRST) | 6 | ISP-5 (RST |
-| Pin 9 (TDI) | 9 | ISP-4 (MOSI) |
+| Pin 1 (TCK) | 1 | ISP-3 / 13 (SCK) |
+| Pin 2 (GND) | 2 | ISP-6 / GND (GND) |
+| Pin 3 (TDO) | 3 | ISP-1 / 12 (MISO) |
+| Pin 4 (VTG) | 4 | ISP-2 / 5V (VCC) |
+| Pin 6 (nSRST) | 6 | ISP-5 / RST (RST) |
+| Pin 9 (TDI) | 9 | ISP-4 / 11 (MOSI) |
 
 ---
 
