@@ -117,8 +117,8 @@
  * If no valid Timer1 captures are seen for this many complete gates,
  * the vehicle-speed period is declared stale and forced invalid.
  *
- * One gate is sufficient for this application because all meaningful
- * engage thresholds are well above any period that would approach 300 ms.
+ * A value of 1 means a single full gate with no captures invalidates
+ * the measurement.
  */
 #define ABS_TIMEOUT_GATES     1u
 
@@ -152,6 +152,7 @@ static volatile uint16_t period_counts = 0u;
 static volatile uint8_t  capture_armed = 0u;
 static volatile uint8_t  period_valid = 0u;
 static volatile uint8_t  abs_stale_gates = ABS_TIMEOUT_GATES;
+static volatile uint8_t  abs_capture_seen = 0u;
 
 static volatile uint16_t engine_count = 0u;
 static volatile uint8_t  last_engine = 0u;
@@ -183,7 +184,7 @@ ISR(TIMER1_CAPT_vect)
         period_valid = 1u;
     }
 
-    abs_stale_gates = 0u;
+    abs_capture_seen = 1u;
 }
 
 /* ============================================================
@@ -210,6 +211,7 @@ ISR(PCINT2_vect)
 ISR(TIMER0_COMPA_vect)
 {
     wdt_reset(); // pet the dog
+
     gate_ticks++;
 
     if (gate_ticks < GATE_TICKS)
@@ -224,18 +226,26 @@ ISR(TIMER0_COMPA_vect)
     engine_count = 0u;
 
     /*
-     * If the ABS capture has gone stale, clear period validity and re-arm
-     * capture synchronization so the next valid period uses two fresh edges.
+     * If any capture happened during this gate, the ABS measurement is fresh.
+     * Otherwise, advance the stale counter and invalidate after timeout.
      */
-    if (abs_stale_gates < 255u)
+    if (abs_capture_seen != 0u)
     {
-        abs_stale_gates++;
+        abs_capture_seen = 0u;
+        abs_stale_gates = 0u;
     }
-
-    if (abs_stale_gates >= ABS_TIMEOUT_GATES)
+    else
     {
-        period_valid = 0u;
-        capture_armed = 0u;
+        if (abs_stale_gates < 255u)
+        {
+            abs_stale_gates++;
+        }
+
+        if (abs_stale_gates >= ABS_TIMEOUT_GATES)
+        {
+            period_valid = 0u;
+            capture_armed = 0u;
+        }
     }
 
     uint16_t period = period_counts;
@@ -323,6 +333,7 @@ static void timer1_init(void)
     capture_armed = 0u;
     period_valid = 0u;
     abs_stale_gates = ABS_TIMEOUT_GATES;
+    abs_capture_seen = 0u;
 }
 
 static void timer0_init(void)
@@ -356,6 +367,7 @@ int main(void)
     timer1_init();
     timer0_init();
 
+    MCUSR = 0u;
     wdt_disable();
     wdt_enable(WDTO_2S);
     wdt_reset();
