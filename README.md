@@ -31,7 +31,7 @@ Recommended fuse configuration:
 
 | Fuse | Value | Purpose |
 |------|-------|---------|
-| LFUSE | `0xFF` | External full-swing crystal oscillator selected; no clock division (`CKDIV8` unprogrammed), so the MCU runs at the full 16 MHz crystal frequency; long startup delay selected for stable crystal startup |
+| LFUSE | `0xC0` | External full-swing crystal oscillator selected; no clock division (`CKDIV8` unprogrammed), so the MCU runs at the full 16 MHz crystal frequency; no startup delay selected for stable crystal startup |
 | HFUSE | `0xDC` | Brown-out detection enabled at approximately 4.3 V; ISP programming enabled (`SPIEN` programmed); reset pin remains a reset pin (`RSTDISBL` unprogrammed); debugWIRE disabled; EEPROM is erased during chip erase |
 | EFUSE | `0xFF` | No bootloader/self-programming (`SELFPRGEN` unprogrammed); reserved bits left at their default `1` values |
 
@@ -196,14 +196,14 @@ avr-objcopy -O ihex tcclc.elf tcclc.hex
 Flash firmware:
 
 ```bash
-avrdude -p t88 -c atmelice_isp -P usb -U flash:w:tcclc.hex:i
+avrdude -p t88 -c atmelice_isp -P usb -B 100 -U flash:w:tcclc.hex:i
 ```
 
 Program fuses:
 
 ```bash
-avrdude -p t88 -c atmelice_isp -P usb \
--U lfuse:w:0xFF:m \
+avrdude -p t88 -c atmelice_isp -P usb -B 100 \
+-U lfuse:w:0xC0:m \
 -U hfuse:w:0xDC:m \
 -U efuse:w:0xFF:m
 ```
