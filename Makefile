@@ -13,7 +13,7 @@ PROGSW:=avrdude
 
 # Which fuses
 #BOD ≈ 4.3 V
-LFUSE:= lfuse:w:0xFF:m 
+LFUSE:= lfuse:w:0xC0:m // start immediately with external oscillator  
 HFUSE:= hfuse:w:0xDC:m 
 EFUSE:= efuse:w:0xFF:m
 
