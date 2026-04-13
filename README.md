@@ -133,7 +133,7 @@ implicitly using the following ratios:
 Evaluated every **300 ms** in this exact order:
 
 ```
-IF vehicle_speed > 27 mph:
+IF vehicle_speed > 27 mph && vehicle_speed < 135 :
     clutch = ENGAGED
 
 ELSE IF engine_speed < 550 rpm:

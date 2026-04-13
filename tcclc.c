@@ -116,6 +116,7 @@
 
 #define PERIOD_FORCE_ENGAGE   MPH_TO_PERIOD(27UL)  /* > 27 mph */
 #define PERIOD_ENGAGE         MPH_TO_PERIOD(9UL)   /* > 9 mph */
+#define PERIOD_MAX_ENGAGE    MPH_TO_PERIOD(135UL)  /* < 135 mph */
 
 #define ENGINE_MIN_COUNT      RPM_TO_COUNT(550UL)  /* < 550 rpm */
 #define ENGINE_LOW_COUNT      RPM_TO_COUNT(735UL)  /* < 735 rpm */
@@ -255,8 +256,10 @@ ISR(TIMER0_COMPA_vect)
        ================= CONTROL LOGIC =========================
        ======================================================== */
 
-    /* IF vehicle_speed > 27 mph */
-    if ((period_valid != 0u) && (period <= PERIOD_FORCE_ENGAGE))
+    /* IF vehicle_speed > 27 mph && vehicle_speed < 135 mph */
+    if ((period_valid != 0u) &&
+        (period <= PERIOD_FORCE_ENGAGE) &&
+        (period >= PERIOD_MAX_ENGAGE))
     {
         PORTD |= (uint8_t)(1u << CLUTCH_PIN);
     }
