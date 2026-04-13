@@ -45,12 +45,12 @@ Recommended fuse configuration:
 
 ## Pin Mapping
 
-| Function | ATtiny88 Pin | Description |
-|---------|--------------|-------------|
-| Throttle Input | PA3 | Internal pull-up |
-| Engine Speed Input | PD4 | Engine RPM signal (TTL) |
-| Vehicle Speed Input | PB0 | ABS signal via ICP1 |
-| Clutch Output | PD0 | TCC control output + LED |
+| Function | ATtiny88 Pin | MH-Tiny Pin | Description |
+|---------|--------------|-------------|-------------|
+| Throttle Input | PA3 | 16 | Internal pull-up |
+| Engine Speed Input | PD4 | 4 | Engine RPM signal (TTL) |
+| Vehicle Speed Input | PB0 | 8 | ABS signal via ICP1 |
+| Clutch Output | PD0 | 0 | TCC control output + LED |
 
 
 | PCB Label | ATtiny88 | Notes |
