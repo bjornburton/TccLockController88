@@ -1,5 +1,5 @@
 /*
- * tcclc_attiny88_adjusted.c
+ * tcclc.c
  *
  * Target: ATtiny88 @ 16 MHz external crystal
  *
@@ -7,21 +7,12 @@
  * --------
  * - Vehicle speed via Timer1 Input Capture (PB0 / ICP1)
  * - Engine speed via PD4 (PCINT)
- * - Throttle switch via PA3
+ * - Throttle switch via PA3 with internal pull-up
  * - Clutch output via PD0
  *
  * - All thresholds defined in REAL UNITS (mph, rpm)
  * - Compile-time conversion to integer constants (no runtime math)
  * - Adjustable gate time (GATE_MS)
- *
- * Corrective changes from the prior version:
- * - Timer0 now uses the derived OCR0A_VALUE, so gate timing matches the
- *   configured F_CPU, prescaler, and T0_TICK_MS.
- * - Added ABS input timeout so stale vehicle-speed data is cleared if the
- *   capture signal disappears.
- * - First Timer1 capture after startup or timeout is ignored so the period
- *   value is always based on a true edge-to-edge interval.
- * - Added explicit throttle input polarity / pull-up configuration.
 
    Copyright 2026 Bjorn Burton
 
