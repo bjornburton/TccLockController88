@@ -107,6 +107,7 @@
 
 #define PERIOD_FORCE_ENGAGE   MPH_TO_PERIOD(27UL)  /* > 27 mph */
 #define PERIOD_ENGAGE         MPH_TO_PERIOD(9UL)   /* > 9 mph */
+#define PERIOD_DISENGAGE      MPH_TO_PERIOD(7UL)   /* > 7 mph */
 #define PERIOD_MAX_ENGAGE    MPH_TO_PERIOD(135UL)  /* < 135 mph */
 
 #define ENGINE_MIN_COUNT      RPM_TO_COUNT(550UL)  /* < 550 rpm */
@@ -259,28 +260,34 @@ ISR(TIMER0_COMPA_vect)
 
     /* IF vehicle_speed > 27 mph && vehicle_speed < 135 mph */
     if ((period_valid != 0u) &&
-        (period <= PERIOD_FORCE_ENGAGE) &&
+        (period <= PERIOD_ENGAGE) &&
         (period >= PERIOD_MAX_ENGAGE))
     {
         PORTD |= (uint8_t)(1u << CLUTCH_PIN);
     }
     /* ELSE IF engine_speed < 550 rpm */
-    else if (eng < ENGINE_MIN_COUNT)
-    {
-        PORTD &= (uint8_t)~(1u << CLUTCH_PIN);
-    }
+    //else if (eng < ENGINE_MIN_COUNT)
+   // {
+   //     PORTD &= (uint8_t)~(1u << CLUTCH_PIN);
+   // }
     /* ELSE IF throttle && engine_speed < 735 rpm */
-    else if ((throttle != 0u) && (eng < ENGINE_LOW_COUNT))
+  //  else if ((throttle != 0u) && (eng < ENGINE_LOW_COUNT))
+  //  {
+ //       PORTD &= (uint8_t)~(1u << CLUTCH_PIN);
+ //   }
+    /* ELSE IF vehicle_speed > 9 mph */
+ //   else if ((period_valid != 0u) && (period <= PERIOD_ENGAGE))
+  //  {
+   //     if (throttle != 0u)
+   //     {
+//            PORTD |= (uint8_t)(1u << CLUTCH_PIN);
+   //     }
+   // }
+
+    else if ((period_valid != 0u) &&
+        (period >= PERIOD_DISENGAGE))
     {
         PORTD &= (uint8_t)~(1u << CLUTCH_PIN);
-    }
-    /* ELSE IF vehicle_speed > 9 mph */
-    else if ((period_valid != 0u) && (period <= PERIOD_ENGAGE))
-    {
-        if (throttle != 0u)
-        {
-            PORTD |= (uint8_t)(1u << CLUTCH_PIN);
-        }
     }
     else
     {
